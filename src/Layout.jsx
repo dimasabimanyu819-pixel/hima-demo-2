@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { motion, useMotionValue, useSpring, useTransform, useMotionTemplate } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 // --- UTILS: TILT CARD ---
 function TiltCard({ children, className = "", onClick, noPadding = false }) {
@@ -61,11 +61,15 @@ const Icons = {
 
 export default function Layout() {
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') !== 'light');
-  const [profil, setProfil] = useState({ nama: "Loading...", logo_url: "", instagram: "", tiktok: "", youtube: "", email: "" });
+  const [isOpen, setIsOpen] = useState(false);
+  const [profil, setProfil] = useState({ nama_himpunan: "Loading...", logo_url: "", instagram: "", tiktok: "", youtube: "", email: "" });
   const BASE_URL = "http://localhost/himpunan-api/api.php";
   
   const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => { 
+    window.scrollTo(0, 0); 
+    setIsOpen(false); // Tutup menu mobile saat pindah halaman
+  }, [pathname]);
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
@@ -92,7 +96,7 @@ export default function Layout() {
 
   return (
     <div className={`${isDarkMode ? 'dark' : ''}`}>
-      <div className="font-sans text-gray-900 dark:text-gray-200 bg-gray-50 dark:bg-[#050505] min-h-screen selection:bg-purple-500/30 selection:text-purple-900 dark:selection:text-purple-200 overflow-x-hidden transition-colors duration-300 flex flex-col">
+      <div className="font-sans text-gray-900 dark:text-gray-200 bg-gray-50 dark:bg-[#050505] min-h-screen selection:bg-purple-500/30 selection:text-purple-900 dark:selection:text-purple-200 overflow-x-hidden transition-colors duration-300 flex flex-col relative">
         
         {/* GLOBAL BACKGROUND */}
         <div className="fixed inset-0 z-0 pointer-events-none">
@@ -104,17 +108,18 @@ export default function Layout() {
         {/* NAVBAR */}
         <motion.nav 
           initial={{ y: -100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: "circOut" }}
-          className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4"
+          className="fixed top-4 md:top-6 left-0 right-0 z-50 flex justify-center px-4"
         >
-          <div className="bg-white/80 dark:bg-black/60 backdrop-blur-md border border-gray-200 dark:border-white/5 rounded-full px-6 py-3 shadow-lg dark:shadow-[0_0_20px_rgba(0,0,0,0.5)] flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2 group">
-              {profil.logo_url && <img src={profil.logo_url} className="h-8 w-8 object-contain group-hover:rotate-12 transition duration-500" alt="Logo"/>}
-              <span className="font-bold text-lg tracking-tight text-gray-800 dark:text-white hidden md:block">{profil.nama_himpunan}</span>
+          <div className="bg-white/80 dark:bg-black/60 backdrop-blur-md border border-gray-200 dark:border-white/5 rounded-3xl md:rounded-full px-4 md:px-6 py-3 shadow-lg flex items-center justify-between md:justify-start gap-4 md:gap-8 w-full max-w-5xl">
+            <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
+              {profil.logo_url && <img src={profil.logo_url} className="h-7 w-7 md:h-8 md:w-8 object-contain group-hover:rotate-12 transition duration-500" alt="Logo"/>}
+              <span className="font-bold text-sm md:text-lg tracking-tight text-gray-800 dark:text-white truncate max-w-[150px] md:max-w-none">{profil.nama_himpunan}</span>
             </Link>
             
-            <ul className="flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-zinc-400">
+            {/* DESKTOP MENU */}
+            <ul className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600 dark:text-zinc-400">
               <li><Link to="/" className="hover:text-purple-600 dark:hover:text-white transition">Beranda</Link></li>
-              <li className="hidden md:block"><Link to="/tentang-kami" className="hover:text-purple-600 dark:hover:text-white transition">Tentang Kami</Link></li>
+              <li><Link to="/tentang-kami" className="hover:text-purple-600 dark:hover:text-white transition">Tentang Kami</Link></li>
               
               <li className="relative group cursor-pointer h-full py-2">
                   <span className="hover:text-purple-600 dark:hover:text-white transition flex items-center gap-1">Divisi</span>
@@ -130,28 +135,63 @@ export default function Layout() {
               <li><a href="#gallery" className="hover:text-purple-600 dark:hover:text-white transition">Galeri</a></li>
             </ul>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:ml-auto">
                 <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition">
                     {isDarkMode ? <Icons.Sun /> : <Icons.Moon />}
                 </button>
-                <Link to="/login" className="bg-black dark:bg-white text-white dark:text-black px-5 py-2 rounded-full text-xs font-bold hover:opacity-80 transition shadow-lg">
+                <Link to="/login" className="hidden xs:block bg-black dark:bg-white text-white dark:text-black px-4 md:px-5 py-2 rounded-full text-[10px] md:text-xs font-bold hover:opacity-80 transition shadow-lg">
                   Member
                 </Link>
+                {/* HAMBURGER BUTTON */}
+                <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-2 text-gray-600 dark:text-white focus:outline-none">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isOpen ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+                    )}
+                  </svg>
+                </button>
             </div>
           </div>
+
+          {/* MOBILE MENU */}
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                className="absolute top-full left-4 right-4 mt-2 bg-white/95 dark:bg-black/95 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl md:hidden flex flex-col gap-4 overflow-hidden"
+              >
+                <Link to="/" className="text-lg font-bold">Beranda</Link>
+                <Link to="/tentang-kami" className="text-lg font-bold">Tentang Kami</Link>
+                <div className="space-y-2">
+                   <p className="text-xs uppercase tracking-widest text-gray-400 dark:text-zinc-600 font-bold">Divisi</p>
+                   <div className="grid grid-cols-2 gap-2">
+                      {divisiList.map((div, i) => (
+                        <Link key={i} to={`/divisi/${div.slug}`} className="text-sm py-2 px-3 bg-gray-50 dark:bg-white/5 rounded-xl">{div.name}</Link>
+                      ))}
+                   </div>
+                </div>
+                <a href="#event" className="text-lg font-bold">Event</a>
+                <a href="#gallery" className="text-lg font-bold">Galeri</a>
+                <Link to="/login" className="xs:hidden bg-purple-600 text-white p-4 rounded-2xl text-center font-bold">Login Member</Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.nav>
 
         {/* CONTENT UTAMA */}
-        <main className="flex-grow pt-24 min-h-screen">
+        <main className="flex-grow pt-24 min-h-screen z-10">
             <Outlet context={{ isDarkMode }} />
         </main>
 
         {/* FOOTER */}
-        <footer className="bg-white dark:bg-[#020202] text-gray-500 dark:text-zinc-500 py-16 border-t border-gray-200 dark:border-white/5 text-sm transition-colors duration-300 mt-auto">
+        <footer className="bg-white dark:bg-[#020202] text-gray-500 dark:text-zinc-500 py-12 md:py-16 border-t border-gray-200 dark:border-white/5 text-sm transition-colors duration-300 mt-auto z-10">
            <div className="container mx-auto px-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12 border-b border-gray-200 dark:border-zinc-900 pb-12">
-                  {/* PETA (Google Map UNIS) */}
-                  <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-zinc-800 h-64 relative group">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 mb-12 border-b border-gray-200 dark:border-zinc-900 pb-12">
+                  <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-zinc-800 h-48 md:h-64 relative group">
                       <iframe 
                         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.505736737568!2d106.63435431476906!3d-6.196806995513812!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f9291771151d%3A0x2863955655380596!2sUniversitas%20Islam%20Syekh-Yusuf%20(UNIS)%20Tangerang!5e0!3m2!1sid!2sid!4v1679000000000!5m2!1sid!2sid" 
                         width="100%" height="100%" style={{border:0}} allowFullScreen="" loading="lazy" 
@@ -159,12 +199,12 @@ export default function Layout() {
                       ></iframe>
                   </div>
                   <div className="flex flex-col justify-center">
-                      <h2 className="text-3xl font-black mb-4 uppercase tracking-wide text-gray-900 dark:text-white">Universitas Islam Syekh-Yusuf</h2>
-                      <p className="text-gray-600 dark:text-zinc-500 mb-8 leading-relaxed">Universitas Islam Syekh-Yusuf (UNIS) Tangerang merupakan perguruan tinggi Islam pertama di Banten yang berdiri sejak tahun 1966. Berkomitmen mencetak sarjana berakhlakul karimah.</p>
+                      <h2 className="text-2xl md:text-3xl font-black mb-4 uppercase tracking-wide text-gray-900 dark:text-white">Universitas Islam Syekh-Yusuf</h2>
+                      <p className="text-gray-600 dark:text-zinc-500 mb-6 md:mb-8 leading-relaxed">Universitas Islam Syekh-Yusuf (UNIS) Tangerang merupakan perguruan tinggi Islam pertama di Banten yang berdiri sejak tahun 1966.</p>
                       <h3 className="text-lg font-bold mb-4 text-purple-600 dark:text-purple-500 flex items-center gap-2"><Icons.Location /> Lokasi Kampus</h3>
-                      <div className="space-y-6">
-                          <div className="bg-gray-100 dark:bg-zinc-900/30 p-4 rounded-xl border border-gray-200 dark:border-white/5"><h4 className="font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2 text-sm"><Icons.Building /> Kampus Pusat (Babakan)</h4><p className="text-gray-600 dark:text-zinc-500 text-xs">Jl. Maulana Yusuf No.10, Babakan, Kec. Tangerang, Kota Tangerang, Banten 15118</p></div>
-                          <div className="bg-gray-100 dark:bg-zinc-900/30 p-4 rounded-xl border border-gray-200 dark:border-white/5"><h4 className="font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2 text-sm"><Icons.Building /> Fakultas Teknik & Komputer</h4><p className="text-gray-600 dark:text-zinc-500 text-xs">Gedung Pascasarjana & Laboratorium Komputer Terpadu.</p></div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-gray-100 dark:bg-zinc-900/30 p-4 rounded-xl border border-gray-200 dark:border-white/5"><h4 className="font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2 text-sm"><Icons.Building /> Kampus Pusat</h4><p className="text-gray-600 dark:text-zinc-500 text-[10px] leading-tight">Jl. Maulana Yusuf No.10, Babakan, Tangerang.</p></div>
+                          <div className="bg-gray-100 dark:bg-zinc-900/30 p-4 rounded-xl border border-gray-200 dark:border-white/5"><h4 className="font-bold text-gray-900 dark:text-white mb-1 flex items-center gap-2 text-sm"><Icons.Building /> Lab Terpadu</h4><p className="text-gray-600 dark:text-zinc-500 text-[10px] leading-tight">Gedung Pascasarjana & Laboratorium Komputer.</p></div>
                       </div>
                   </div>
               </div>
@@ -181,7 +221,7 @@ export default function Layout() {
                           {safeLink(profil.youtube) && <a href={safeLink(profil.youtube)} target="_blank" className="p-2 bg-gray-200 dark:bg-zinc-900 rounded-full hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition"><Icons.YouTube /></a>}
                       </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-12">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-8 md:gap-12">
                       <div>
                           <h4 className="text-gray-900 dark:text-white font-bold mb-6">Kontak</h4>
                           <ul className="space-y-4">
@@ -191,7 +231,7 @@ export default function Layout() {
                       </div>
                   </div>
               </div>
-              <div className="border-t border-gray-200 dark:border-white/5 mt-16 pt-8 text-center text-xs text-gray-500 dark:text-zinc-600">
+              <div className="border-t border-gray-200 dark:border-white/5 mt-12 md:mt-16 pt-8 text-center text-[10px] md:text-xs text-gray-500 dark:text-zinc-600">
                   © 2026 {profil.nama_himpunan}. Support by @WebOrganisasi.
               </div>
            </div>
